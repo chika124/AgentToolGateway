@@ -1,0 +1,28 @@
+# 策略 DSL v1 示例（语义权限 L1 规则引擎）
+agents:
+  - id: claude-code-dev
+    description: 本地开发用 Claude Code Agent
+    policies:
+      - tool: "Bash"
+        rules:
+          - field: "$.command"
+            deny: "\\brm\\s+-rf\\b|\\bsudo\\b|mkfs|dd\\s+if="
+            denyReason: "禁止破坏性/提权命令"
+          - field: "$.command"
+            allow: "^(ls|cat|grep|find|git|mvn|java|python|npm|cd|echo|curl)\\b"
+            allowReason: "仅允许常用开发命令"
+      - tool: "Read"
+        rules:
+          - field: "$.file_path"
+            deny: "(\\.env|id_rsa|credentials\\.json|\\.aws|\\.ssh)"
+            denyReason: "禁止读取敏感文件"
+      - tool: "WebFetch"
+        rules:
+          - field: "$.url"
+            allowDomain: "internal\\.corp\\.com"
+      - tool: "*"
+        sanitize:
+          - pattern: "sk-[A-Za-z0-9]{20,}"
+            replace: "sk-***REDACTED***"
+          - pattern: "\\b\\d{17}[\\dXx]\\b"
+            replace: "[ID_REDACTED]"
